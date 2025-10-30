@@ -1,36 +1,31 @@
+# mqtt_client.py
 import paho.mqtt.client as mqtt
-import json
-from database import SessionLocal, SensorData
+from database import save_sensor_data
 
-BROKER = "localhost"  # Cambia por la IP de tu broker si está en otra máquina
+BROKER = "localhost"
 PORT = 1883
-TOPIC = "sensores/lecturas"
+TOPIC = "sensor/datos"
 
-# Función que se ejecuta al recibir un mensaje
+def on_connect(client, userdata, flags, rc):
+    print("Conectado a MQTT con código:", rc)
+    client.subscribe(TOPIC)
+
 def on_message(client, userdata, msg):
     try:
-        data_str = msg.payload.decode()
-        print("Mensaje recibido:", data_str)
-        data = json.loads(data_str)
+        payload = msg.payload.decode()
+        print(f"Mensaje recibido en {msg.topic}: {payload}")
 
-        db = SessionLocal()
-        nuevo_registro = SensorData(
-            temperatura=data.get("temperatura"),
-            humedad_aire=data.get("humedad_aire"),
-            humedad_suelo=data.get("humedad_suelo"),
-        )
-        db.add(nuevo_registro)
-        db.commit()
-        db.close()
-
+        # Formato esperado: sensor_id,humedad_aire,humedad_suelo,temperatura
+        sensor_id, ha, hs, t = payload.split(",")
+        save_sensor_data(sensor_id, float(ha), float(hs), float(t))
+        print("Datos guardados en InfluxDB")
     except Exception as e:
         print("Error procesando mensaje:", e)
 
-# Función que inicia el cliente MQTT
 def start_mqtt():
     client = mqtt.Client()
+    client.on_connect = on_connect
     client.on_message = on_message
+
     client.connect(BROKER, PORT, 60)
-    client.subscribe(TOPIC)
     client.loop_start()
-    print(f"Suscrito al tópico '{TOPIC}' en el broker {BROKER}")

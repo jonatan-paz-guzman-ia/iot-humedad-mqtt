@@ -1,21 +1,26 @@
+# main.py
 from fastapi import FastAPI
-from database import SessionLocal, SensorData
+from models import SensorData
+from database import save_sensor_data
 from mqtt_client import start_mqtt
 
-app = FastAPI(title="API IoT Humedad")
+app = FastAPI(title="API IoT Humedad y Temperatura")
 
 @app.on_event("startup")
 def startup_event():
-    # Inicia el cliente MQTT cuando arranca la API
+    print("Iniciando API y cliente MQTT...")
     start_mqtt()
 
 @app.get("/")
 def root():
-    return {"mensaje": "API de Humedad con MQTT está funcionando"}
+    return {"message": "API de sensores funcionando correctamente"}
 
-@app.get("/datos")
-def obtener_datos():
-    db = SessionLocal()
-    datos = db.query(SensorData).all()
-    db.close()
-    return datos
+@app.post("/data")
+def post_data(data: SensorData):
+    save_sensor_data(
+        data.sensor_id,
+        data.humedad_aire,
+        data.humedad_suelo,
+        data.temperatura
+    )
+    return {"status": "ok", "data": data.dict()}
