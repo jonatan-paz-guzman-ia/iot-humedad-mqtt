@@ -1,6 +1,7 @@
 # database.py
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
+from datetime import datetime, timezone
 
 INFLUX_URL = "http://localhost:8086"
 INFLUX_TOKEN = "MKaO8LC8VDc43vjLZvOgGEL4XYzUBGGWObkWS6tANfExDwO2yTKtoCqdTTR6jMfGLyEjrq7ZiDAzoUAjGvewOQ=="
@@ -18,6 +19,6 @@ def save_sensor_data(sensor_id: str, humedad_aire: float, humedad_suelo: float, 
         .field("humedad_aire", humedad_aire)
         .field("humedad_suelo", humedad_suelo)
         .field("temperatura", temperatura)
-        .time(write_precision=WritePrecision.NS)
+        .time(datetime.now(timezone.utc))
     )
     write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
