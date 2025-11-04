@@ -6,9 +6,12 @@
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
+// --- SENSOR CAPACITIVO DE HUMEDAD DEL SUELO ---
+#define SOIL_PIN 34     // Pin analógico (solo lectura ADC)
+
 const char* ssid = "Fliapazmunoz";
 const char* password = "Fliapazmunoz123";
-const char* mqtt_server = "ec2-54-160-193-244.compute-1.amazonaws.com"; 
+const char* mqtt_server = "ec2-52-91-242-207.compute-1.amazonaws.com"; 
 const char* sensor_id = "esp32_1";
 
 WiFiClient espClient;
@@ -53,7 +56,12 @@ void loop() {
 
   float humedad_aire = dht.readHumidity();
   float temperatura = dht.readTemperature();
-  float humedad_suelo = analogRead(34) / 4095.0 * 100.0; // ejemplo: sensor en pin 34
+
+ // --- Lectura del sensor de humedad del suelo ---
+  int valor_analogico = analogRead(SOIL_PIN);
+  // El sensor devuelve valores entre 0 (húmedo) y 4095 (seco)
+  float humedad_suelo = map(valor_analogico, 4095, 0, 0, 100);
+
 
   String mensaje = String(sensor_id) + "," +
                    String(humedad_aire) + "," +
